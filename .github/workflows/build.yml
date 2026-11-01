@@ -1,4 +1,4 @@
-name: Build APK from zip
+name: Build APK
 on:
   push:
   workflow_dispatch:
@@ -7,20 +7,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Giải nén zip
-        run: unzip -q TungTomApp.zip -d src
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      - name: Chấp nhận license Android SDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
       - name: Build
-        working-directory: src/TungTomApp
-        run: gradle assembleDebug --no-daemon
+        run: |
+          if [ -f TungTomApp.zip ]; then
+            unzip -q TungTomApp.zip -d src
+            cd src/TungTomApp
+          fi
+          gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: TungTom-apk
-          path: src/TungTomApp/app/build/outputs/apk/debug/*.apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            src/TungTomApp/app/build/outputs/apk/debug/*.apk
